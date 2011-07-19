@@ -1,0 +1,15 @@
+production:
+  username: you@email.com
+  password: yourpass
+  app_token: your_app_token
+  domain: opendata.socrata.com
+  dataset: 38fr-xg2g
+  batch_size: 10
+
+development:
+  username: you@email.com
+  password: yourpass
+  app_token: your_app_token
+  domain: opendata.socrata.com
+  dataset: 38fr-xg2g
+  batch_size: 10

@@ -11,12 +11,13 @@ require 'thread'
 end
 
 CONFIG = YAML.load_file(ARGV[0])[ENV["RACK_ENV"] || "development"]
-TIMER = 10
 
 EM.run do
   buffer = ""
   links = []
   links_semaphore = Mutex.new
+  prev_batchsize = 0
+  last_event = Time.now
 
   socrata = Socrata.new({
     :domain => CONFIG["domain"],
@@ -26,11 +27,14 @@ EM.run do
   })
 
   # Follow the bit.ly stream...
-  http = EventMachine::HttpRequest.new("http://bitly.measuredvoice.com/usa.gov").get
+  http = EventMachine::HttpRequest.new(CONFIG["feed_url"]).get
 
   http.callback {
-    unless http.response_header.status == 200
-      puts "Call failed with response code #{http.response_header.status}"
+    if http.response_header.status == 200
+      puts "Call succeeded, streaming..."
+    else
+      $stderr.puts "Call failed with response code #{http.response_header.status}"
+      http = EventMachine::HttpRequest.new(CONFIG["feed_url"]).get
     end
   }
 
@@ -42,7 +46,13 @@ EM.run do
         if !link.nil?
           links_semaphore.synchronize {
             links << link
+
+            # Store away our new batch size and timestamp, so we can track when we last saw
+            # an event
+            prev_batchsize = links.size
+            last_event = Time.now
           }
+
         end
       rescue JSON::ParserError => e
         # Swallow your pride...
@@ -50,13 +60,25 @@ EM.run do
     end
   end
 
+  http.disconnect do
+    $stderr.puts "Lost connection!!!!"
+    http = EventMachine::HttpRequest.new(CONFIG["feed_url"]).get
+  end
+
   # Periodically flush the queue to the API
-  EM.add_periodic_timer(TIMER) do
+  EM.add_periodic_timer(CONFIG["check_time"]) do
     links_semaphore.synchronize do
       if links.count < CONFIG["batch_size"]
-        $stderr.puts "Batch too small (#{links.count}), skipping..."
+        # Check to see if it's been too long with us stuck at this batch size
+        if(links.count == prev_batchsize && Time.now - last_event > CONFIG["stuck_time"])
+          $stderr.puts "Connection stuck, restarting..."
+          http = EventMachine::HttpRequest.new(CONFIG["feed_url"]).get
+          last_event = Time.now
+        end
+
+        puts "Batch too small (#{links.count}), skipping..."
       else
-        $stderr.puts "Processing batch of #{links.count}..."
+        puts "Processing batch of #{links.count}..."
         begin
           socrata.batch do
             while link = links.shift
@@ -86,10 +108,14 @@ EM.run do
               # Clear out null values
               payload = payload.delete_if {|k, v| v.nil?}
 
-              $stderr.puts "New Row: #{payload.inspect}"
+              #puts "New Row: #{payload.inspect}"
               socrata.post("/api/views/#{CONFIG["dataset"]}/rows.json", {:body => payload.to_json})
             end
           end
+
+          # Reset last batch
+          prev_batchsize = 0
+          last_event = Time.now
         rescue Exception => e
           $stderr.puts "Error in batch: #{e}: #{e.backtrace.join("\n")}}"
         end

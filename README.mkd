@@ -1,0 +1,3 @@
+A simple consumer for the 1.USA.gov data feed. Details available at: http://www.usa.gov/About/developer_resources/developers.shtml
+
+Details on the hack day can be found at: http://blog.usa.gov/post/7054661537/1-usa-gov-open-data-and-hack-day

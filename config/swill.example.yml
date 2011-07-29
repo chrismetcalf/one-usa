@@ -1,15 +1,21 @@
 production:
-  username: you@email.com
-  password: yourpass
-  app_token: your_app_token
+  username: your@email.com
+  password: yourpassword
+  app_token: yourtoken
   domain: opendata.socrata.com
   dataset: 38fr-xg2g
-  batch_size: 10
+  batch_size: 30
+  check_time: 5
+  stuck_time: 15
+  feed_url: "http://bitly.measuredvoice.com/usa.gov"
 
-development:
-  username: you@email.com
-  password: yourpass
-  app_token: your_app_token
+production:
+  username: your@email.com
+  password: yourpassword
+  app_token: yourtoken
   domain: opendata.socrata.com
   dataset: 38fr-xg2g
-  batch_size: 10
+  batch_size: 30
+  check_time: 5
+  stuck_time: 15
+  feed_url: "http://bitly.measuredvoice.com/usa.gov"

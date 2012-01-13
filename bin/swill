@@ -70,10 +70,9 @@ EM.run do
     links_semaphore.synchronize do
       if links.count < CONFIG["batch_size"]
         # Check to see if it's been too long with us stuck at this batch size
-        if(links.count == prev_batchsize && Time.now - last_event > CONFIG["stuck_time"])
-          $stderr.puts "Connection stuck, restarting..."
-          http = EventMachine::HttpRequest.new(CONFIG["feed_url"]).get
-          last_event = Time.now
+        if((links.count == 0 || links.count == prev_batchsize) && Time.now - last_event > CONFIG["stuck_time"])
+          $stderr.puts "Connection stuck, committing sepuku..."
+          exit 1
         end
 
         puts "Batch too small (#{links.count}), skipping..."
@@ -83,7 +82,7 @@ EM.run do
           socrata.batch do
             while link = links.shift
               payload = {
-                "Short URL" => {"url" => "http://bit.ly/#{link["g"]}"},
+                "Short URL" => {"url" => "http://1.usa.gov/#{link["g"]}"},
                 "User Agent" => link["a"],
                 "Country Code" => link["c"],
                 "Known User" => (link["nk"] == 1),

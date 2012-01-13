@@ -2,12 +2,15 @@ GEM
   remote: http://rubygems.org/
   specs:
     addressable (2.2.6)
+    crack (0.1.8)
     em-http-request (0.3.0)
       addressable (>= 2.0.0)
       escape_utils
       eventmachine (>= 0.12.9)
     escape_utils (0.2.3)
     eventmachine (0.12.10)
+    httparty (0.7.8)
+      crack (= 0.1.8)
     json (1.5.3)
 
 PLATFORMS
@@ -16,4 +19,5 @@ PLATFORMS
 DEPENDENCIES
   em-http-request (= 0.3.0)
   eventmachine (= 0.12.10)
+  httparty (= 0.7.8)
   json (= 1.5.3)
